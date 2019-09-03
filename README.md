@@ -41,10 +41,28 @@ public class ProducerImplTest {
   }
   
   @Test
-  public void testSend_Not_OK() throws InterruptedEception, RemotingException, MQClientException, MQBrokerException {}
+  public void testSend_Not_OK() throws InterruptedEception, RemotingException, MQClientException, MQBrokerException {
+    SendResult sendResult = new SendResult();
+    sendResult.setSendStatus(SendStatus.FLUSH_DISK_TIMEOUT);
+    
+    when(rocketmqProducer.send(any(Message.class), anyLong())).thenReturn(sendResult);
+    try {
+      producer.send(producer.createBytesMessage("HELLO_TOPIC", new byte[] {'a'}));
+      failBecauseExceptoinWasNotTHrown(OMSRuntimeException.class);
+    } catch (Exception e) {
+      assertThat(e).hasMessageContaining("Send message to RocketMQ broker failed.");
+    }
+  }
   
   @Test
-  public void testSend_WithException () throws InterruptedException, RemotingException, MQClientException, MQBrokerException {}
+  public void testSend_WithException () throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+    when(rocketmqProducer.send(any(Message.class), anyLong())).thenThrow(MQClientException.class);
+    try {
+      producer.send(producer.createBytesMessage("HELLO_TOPIC", new byte[] {'a'});)
+    } catch (Exception e) {
+      assertThat(e).hasMessageContaining("Send message to RocketMQ broker failed.");
+    }
+  }
 }
 
 ```
